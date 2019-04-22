@@ -3,13 +3,16 @@ import os
 import sys
 import csv
 import math
+import pandas
 
 def get_data(file_name):
     try:
         fd = open(file_name, 'r')
         lines = csv.reader(fd, delimiter=',')
+        full_data = []
         data = {}
         for index, row in enumerate(lines):
+            new_line_data = []
             for col, value in enumerate(row):
                 if index == 0:
                     data[col] = { "label": value, "value": [], "numerical": False }
@@ -23,17 +26,17 @@ def get_data(file_name):
                     if value == '':
                         value = None
                     data[col]["value"].append(value)
-        return data
-    except Exception as e:
-        raise(e)
+                    new_line_data.append(value)
+                full_data.append(new_line_data)
+        return [full_data, data]
+    except:
         raise(Exception("CSV file is not a valid one"))
 
 def get_std(values, mean, count):
-    squared_values = []
-    squared_mean = 0
-    
-    
-    return res
+    squared_diff_sum = 0.0
+    for value in values:
+        squared_diff_sum += ((value - mean) ** 2)
+    return math.sqrt(float(squared_diff_sum / (count - 1))) # Substraction by one to get same result than pandas
 
 def get_metrics(item):
     item["count"] = 0
@@ -52,10 +55,10 @@ def get_metrics(item):
         raise(Exception("Au moins une des colonnes de ce fichier est vide"))
     item["mean"] = item["sum_val"] / item["count"]
     item["value"] = sorted(item["value"])
-    item["25%"] = item["value"][math.ceil(item["count"] / 4)]
-    item["50%"] = math.ceil(item["value"][math.ceil(item["count"] / 2)])
-    item["75%"] = item["value"][math.ceil((item["count"] / 4) * 3)]
-    item["std"] = get_std(item["value"], item["mean"])
+    item["25%"] = item["value"][math.floor(item["count"] / 4) - 1] + (item["value"][math.floor(item["count"] / 4)] - item["value"][math.floor(item["count"] / 4) - 1]) * (3 / 4)
+    item["50%"] = item["value"][math.floor(item["count"] / 2) - 1] + (item["value"][math.floor(item["count"] / 2)] - item["value"][math.floor(item["count"] / 2) - 1]) * (2 / 4)
+    item["75%"] = item["value"][math.floor(item["count"] / 4) * 3 - 1] + (item["value"][math.floor(item["count"] / 4) * 3] - item["value"][math.floor(item["count"] / 4) * 3 - 1]) * (1 / 4)
+    item["std"] = get_std(item["value"], item["mean"], item["count"])
 
 def print_metrics(data):
     ligns = ['', 'Count', 'Mean', 'Std', 'Min', '25%', '50%', '75%', 'Max']
@@ -76,6 +79,10 @@ def describe(data):
     for key, value in data.items():
         if value["numerical"] == True:
             get_metrics(data[key])
+            value = pandas.Series(data[key]["value"])
+            print(data[key]["label"])
+            print (pandas.DataFrame.describe(value))
+            print("---------------")
     return
 
 if __name__ == "__main__":
@@ -85,11 +92,10 @@ if __name__ == "__main__":
 
     if os.path.isfile(args.file):
         try:
-            data = get_data(args.file)
+            full_data, data = get_data(args.file)
             describe(data)
             print_metrics(data)
         except Exception as e:
-            raise(e)
             sys.stderr.write(e.__str__() + "\n")
             sys.exit(1)
     else:
