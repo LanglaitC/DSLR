@@ -3,9 +3,8 @@ import matplotlib.pyplot as plt
 import argparse
 from constants import HOUSES_INDEX
 
-def create_histogram(houses, value, title):
-    plt.xlabel('Notes')
-    plt.ylabel('Effectif')
+def create_histogram(houses, value, title, graph_num):
+    plt.subplot(7, 2, graph_num)
     plt.title(title)
     houses_dict = {}
     houses_set = []
@@ -19,14 +18,16 @@ def create_histogram(houses, value, title):
             else:
                 houses_value[houses_dict[houses[i]]].append(value[i])
     plt.hist(houses_value, label=houses_set)
-    plt.legend()
-    plt.show()
 
 if __name__ == '__main__':
     args = argparse.ArgumentParser("Buid histogram from csv file")
     args.add_argument("file", help="The file to analyze")
     args = args.parse_args()
     full_data, data = get_data(args.file)
+    i = 0
     for value in data.values():
         if value["numerical"] and value["label"] != "Index":
-            create_histogram(data[HOUSES_INDEX]["value"], value["value"], value["label"])
+            i += 1
+            create_histogram(data[HOUSES_INDEX]["value"], value["value"], value["label"], i)
+    #plt.legend()
+    plt.show()
