@@ -38,15 +38,32 @@ def get_std(values, mean, count):
         squared_diff_sum += ((value - mean) ** 2)
     return math.sqrt(float(squared_diff_sum / (count - 1))) # Substraction by one to get same result than pandas
 
+def percentile(N, count, percent, key=lambda x:x):
+    """
+    Find the percentile of a list of values.
+
+    @parameter N - is a list of values. Note N MUST BE already sorted.
+    @parameter percent - a float value from 0.0 to 1.0.
+    @parameter key - optional key function to compute value from each element of N.
+
+    @return - the percentile of the values
+    """
+    k = (count - 1) * percent
+    f = math.floor(k)
+    c = math.ceil(k)
+    if f == c:
+        return key(N[int(k)])
+    d0 = key(N[int(f)]) * (c-k)
+    d1 = key(N[int(c)]) * (k-f)
+    return d0+d1
+
 def get_metrics(item):
     item["count"] = 0
     item["max_val"] = None
     item["min_val"] = None
     item["sum_val"] = 0
+    item["value"] = [x for x in item["value"] if x is not None]
     for index, value in enumerate(item["value"]):
-        if value is None:
-            value = 0
-            item["value"][index] = 0
         item["count"] += 1
         item["max_val"] = value if item["max_val"] is None or item["max_val"] < value else item["max_val"]
         item["min_val"] = value if item["min_val"] is None or item["min_val"] > value else item["min_val"]
@@ -55,9 +72,12 @@ def get_metrics(item):
         raise(Exception("Au moins une des colonnes de ce fichier est vide"))
     item["mean"] = item["sum_val"] / item["count"]
     item["value"] = sorted(item["value"])
-    item["25%"] = item["value"][math.floor(item["count"] / 4) - 1] + (item["value"][math.floor(item["count"] / 4)] - item["value"][math.floor(item["count"] / 4) - 1]) * (3 / 4)
-    item["50%"] = item["value"][math.floor(item["count"] / 2) - 1] + (item["value"][math.floor(item["count"] / 2)] - item["value"][math.floor(item["count"] / 2) - 1]) * (2 / 4)
-    item["75%"] = item["value"][math.floor(item["count"] / 4) * 3 - 1] + (item["value"][math.floor(item["count"] / 4) * 3] - item["value"][math.floor(item["count"] / 4) * 3 - 1]) * (1 / 4)
+    item["25%"] = percentile(item["value"], item["count"], 0.25)
+    item["50%"] = percentile(item["value"], item["count"], 0.5)
+    item["75%"] = percentile(item["value"], item["count"], 0.75)
+    # item["25%"] = item["value"][math.floor(item["count"] / 4) - 1] + (item["value"][math.floor(item["count"] / 4)] - item["value"][math.floor(item["count"] / 4 - 1)]) * (3 / 4)
+    # item["50%"] = item["value"][math.floor(item["count"] / 2) - 1] + (item["value"][math.floor(item["count"] / 2)] - item["value"][math.floor(item["count"] / 2) - 1]) * (2 / 4)
+    # item["75%"] = item["value"][math.floor(item["count"] / 4) * 3 - 1] + (item["value"][math.floor(item["count"] / 4) * 3] - item["value"][math.floor(item["count"] / 4) * 3 - 1]) * (1 / 4)
     item["std"] = get_std(item["value"], item["mean"], item["count"])
 
 def print_metrics(data):
@@ -68,11 +88,11 @@ def print_metrics(data):
         for value in data.values():
             if value["numerical"]:
                 if i == 0:
-                    print(" {:>8} |".format(value[keys[i]]), end='')
+                    print(" {:>14} ".format(value[keys[i]]), end='')
                 else:
-                    len_label = 8 if len(value["label"]) < 8 else len(value["label"])
-                    value = "{:.2f}".format(value[keys[i]])
-                    print(" {0:>{1}s} |".format(value, len_label), end='')
+                    len_label = 14 if len(value["label"]) < 14 else len(value["label"])
+                    value = "{:.6f}".format(value[keys[i]])
+                    print(" {0:>{1}s} ".format(value, len_label), end='')
         print('')
 
 def describe(data):
@@ -96,6 +116,7 @@ if __name__ == "__main__":
             describe(data)
             print_metrics(data)
         except Exception as e:
+            raise(e)
             sys.stderr.write(e.__str__() + "\n")
             sys.exit(1)
     else:
