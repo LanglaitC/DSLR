@@ -39,15 +39,6 @@ def get_std(values, mean, count):
     return math.sqrt(float(squared_diff_sum / (count - 1))) # Substraction by one to get same result than pandas
 
 def percentile(N, count, percent, key=lambda x:x):
-    """
-    Find the percentile of a list of values.
-
-    @parameter N - is a list of values. Note N MUST BE already sorted.
-    @parameter percent - a float value from 0.0 to 1.0.
-    @parameter key - optional key function to compute value from each element of N.
-
-    @return - the percentile of the values
-    """
     k = (count - 1) * percent
     f = math.floor(k)
     c = math.ceil(k)
@@ -63,7 +54,7 @@ def get_metrics(item):
     item["min_val"] = None
     item["sum_val"] = 0
     item["value"] = [x for x in item["value"] if x is not None]
-    for index, value in enumerate(item["value"]):
+    for value in item["value"]:
         item["count"] += 1
         item["max_val"] = value if item["max_val"] is None or item["max_val"] < value else item["max_val"]
         item["min_val"] = value if item["min_val"] is None or item["min_val"] > value else item["min_val"]
@@ -75,9 +66,6 @@ def get_metrics(item):
     item["25%"] = percentile(item["value"], item["count"], 0.25)
     item["50%"] = percentile(item["value"], item["count"], 0.5)
     item["75%"] = percentile(item["value"], item["count"], 0.75)
-    # item["25%"] = item["value"][math.floor(item["count"] / 4) - 1] + (item["value"][math.floor(item["count"] / 4)] - item["value"][math.floor(item["count"] / 4 - 1)]) * (3 / 4)
-    # item["50%"] = item["value"][math.floor(item["count"] / 2) - 1] + (item["value"][math.floor(item["count"] / 2)] - item["value"][math.floor(item["count"] / 2) - 1]) * (2 / 4)
-    # item["75%"] = item["value"][math.floor(item["count"] / 4) * 3 - 1] + (item["value"][math.floor(item["count"] / 4) * 3] - item["value"][math.floor(item["count"] / 4) * 3 - 1]) * (1 / 4)
     item["std"] = get_std(item["value"], item["mean"], item["count"])
 
 def print_metrics(data):
@@ -99,10 +87,6 @@ def describe(data):
     for key, value in data.items():
         if value["numerical"] == True:
             get_metrics(data[key])
-            value = pandas.Series(data[key]["value"])
-            print(data[key]["label"])
-            print (pandas.DataFrame.describe(value))
-            print("---------------")
     return
 
 if __name__ == "__main__":
@@ -116,7 +100,6 @@ if __name__ == "__main__":
             describe(data)
             print_metrics(data)
         except Exception as e:
-            raise(e)
             sys.stderr.write(e.__str__() + "\n")
             sys.exit(1)
     else:

@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import json
 import matplotlib.pyplot as plt
-from constants import DATA_FILE, HOUSES_COL, T0_LABEL, SELECTED_FEATURES, COLORS
+from constants import DATA_FILE, HOUSES_COL, T0_LABEL, SELECTED_FEATURES
 
 class Train:
     def __init__(self, data, iterations, lr, visu):
@@ -44,10 +44,11 @@ class Train:
                 gradient = np.dot(x.T, (h - y)) / y.size
                 thetas -= self.lr * gradient
             self.predictions['houses'][house] = list(thetas)
-            if self.visu and house in COLORS:
-                plt.plot(cost ,label=house, color=COLORS[house])
-        plt.legend()
-        plt.show()
+            if self.visu:
+                plt.plot(cost ,label=house)
+        if self.visu:
+            plt.legend()
+            plt.show()
         with open(DATA_FILE, 'w+') as json_file:  
             json.dump(self.predictions,  json_file)
 
@@ -59,23 +60,21 @@ class Train:
 
 
 
+if __name__ == '__main__':
+    args = argparse.ArgumentParser("Statistic description of your data file")
+    args.add_argument("file", help="File to descripte", type=str)
+    args.add_argument("-i", "--iter", help="The number of iterations to go through the regression", default=10000, type=int)
+    args.add_argument("-l", "--learning", help="The learning rate to use during the regression", default=0.01, type=float)
+    args.add_argument("-v", "--visu", help="Activate visualization of cost evolution", default=False, action="store_true")
+    args = args.parse_args()
 
-args = argparse.ArgumentParser("Statistic description of your data file")
-args.add_argument("file", help="File to descripte", type=str)
-args.add_argument("-i", "--iter", help="The number of iterations to go through the regression", default=10000, type=int)
-args.add_argument("-l", "--learning", help="The learning rate to use during the regression", default=0.01, type=float)
-args.add_argument("-v", "--visu", help="Activate visualization of cost evolution", default=False, action="store_true")
-args = args.parse_args()
-
-if os.path.isfile(args.file):
-    try:
-        df = pd.read_csv(args.file, sep=',')
-        Train(df, args.iter, args.learning, args.visu).train()
-        
-    except Exception as e:
-        raise(e)
-        sys.stderr.write(str(e) + '\n')
-        sys.exit()
-else:
-    sys.stderr.write("Invalid input\n")
-    sys.exit(1)
+    if os.path.isfile(args.file):
+        try:
+            df = pd.read_csv(args.file, sep=',')
+            Train(df, args.iter, args.learning, args.visu).train()
+        except Exception as e:
+            sys.stderr.write('Le fichier n\'est pas bien formaté ou n\'existe pas\n')
+            sys.exit(1)
+    else:
+        sys.stderr.write("Invalid input\n")
+        sys.exit(1)

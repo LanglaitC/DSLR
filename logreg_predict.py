@@ -22,7 +22,7 @@ def ft_standardize(matrix, mean, std):
 
 if __name__ == '__main__':
     args = argparse.ArgumentParser("Predict houses from data")
-    args.add_argument("file", help="File to descripte", type=str)
+    args.add_argument("file", help="File to use to write the predictions", type=str)
     args = args.parse_args()
     if os.path.isfile(args.file):
         try:
@@ -33,10 +33,10 @@ if __name__ == '__main__':
             std_devs = data_json['standard']['std']
             means = data_json['standard']['mean']
         except Exception as e:
-            sys.stderr.write("Le fichier de data m'existe pas ou n'est pas formaté correctement\n")
+            sys.stderr.write("Le fichier de data ou le fichier de test n'existe pas ou n'est pas formaté correctement\n")
             sys.exit(1)
     else:
-        sys.stderr.write("Le fichier de data m'existe pas ou n'est pas formaté correctement\n")
+        sys.stderr.write("Le fichier de data ou le fichier de test n'existe pas ou n'est pas formaté correctement\n")
         sys.exit(1)
     df.loc[:, SELECTED_FEATURES] = ft_standardize(df.loc[: , SELECTED_FEATURES], means, std_devs)
     df = df.loc[:, SELECTED_FEATURES]
